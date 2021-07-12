@@ -3,7 +3,6 @@
 
 #include <QMainWindow>
 #include "producto.h"
-#include "verificador.h"
 #include "cliente.h"
 #include "resumen.h"
 #define IVA 12
