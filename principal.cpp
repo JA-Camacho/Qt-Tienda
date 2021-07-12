@@ -1,6 +1,6 @@
 #include "principal.h"
 #include "ui_principal.h"
-
+#include <QDebug>
 
 Principal::Principal(QWidget *parent)
     : QMainWindow(parent)
@@ -25,6 +25,63 @@ Principal::~Principal()
     delete ui;
 }
 
+bool Principal::verificador(QString cedula)
+{
+    //Creamos una lista temporal
+    QString temp[10];
+    int aux;
+    int sumaPar = 0;
+    int sumaImpar = 0;
+    //Recogemos de la cedula los 9 primeros digitos
+    for(int i = 0; i < 9; i++)
+    {
+        //A la lista temporal le vamos ingresando los valores de la cedula uno por uno
+        temp[i] = cedula[i];
+        //Le damos el valor de la lista temporal, en posicion i, a la variable aux
+        aux = temp[i].toInt();
+        //Si i + 1 es par
+        if((i+1)%2==0)
+            //Se aumenta a sumaPar
+            sumaPar += aux;
+        //Si no
+        else
+        {
+            //Si al multiplicar el aux por 2 rebasa 9
+            if(aux * 2 > 9)
+                //Aumentaremos a sumaImpar el aux multiplicado por 2 y restado 9
+                sumaImpar = sumaImpar + ((aux * 2) - 9);
+            //Si no
+            else
+                //Se aumenta a sumaImpar
+                sumaImpar += aux * 2;
+        }
+    }
+    //Se obtiene el ultimo digito de la cedula
+    int ultimoCedula = cedula.toInt()%10;
+    //Obtenemos el módulo de la suma de los numeros pares e impares
+    int verificador = (sumaPar + sumaImpar)%10;
+    //Si verificador es diferente de cero
+    if(verificador !=0)
+        //De 10 se le resta el verificador
+        verificador = 10 - verificador;
+    return ultimoCedula == verificador? true : false;
+}
+
+void Principal::limpiar()
+{
+    ui->inCedula->clear();
+    ui->inNombre->clear();
+    ui->inTelefono->clear();
+    ui->inEmail->clear();
+    ui->inDireccion->clear();
+    informacion.clear();
+    ui->outDetalle->clear();
+    m_subtotal = 0;
+    ui->outSubtotal->setText("$ " + QString::number(m_subtotal, 'f', 2));
+    ui->outIva->setText("$ " + QString::number(0.0, 'f', 2));
+    ui->outTotal->setText("$ " + QString::number(0.0, 'f', 2));
+}
+
 
 void Principal::on_cmdAgregar_released()
 {
@@ -47,6 +104,12 @@ void Principal::on_cmdAgregar_released()
     ui->outDetalle->setItem(fila,1,new QTableWidgetItem(p->nombre()));
     ui->outDetalle->setItem(fila,2,new QTableWidgetItem("$ " + QString::number(subtotal, 'f',2)));
 
+    //Agregar los datos de compra a la informacion
+    informacion =informacion + "----------------------------"
+                               "\nCant: " + QString::number(cantidad)
+            + "\nProducto: " + p->nombre()
+            + "\nSubTotal: $" + QString::number(subtotal,'f',2) + "\n";
+
     //Limpiar datos
     ui->inCantidad->setValue(0);
     ui->inProducto->setFocus();
@@ -66,9 +129,60 @@ void Principal::on_inProducto_currentIndexChanged(int index)
 void Principal::calcular(float stProducto)
 {
     m_subtotal += stProducto;
-    float iva = m_subtotal * IVA/100;
-    float total = m_subtotal + iva;
+    m_iva = m_subtotal * IVA/100;
+    m_total = m_subtotal + m_iva;
     ui->outSubtotal->setText("$ " + QString::number(m_subtotal, 'f', 2));
-    ui->outIva->setText("$ " + QString::number(iva, 'f', 2));
-    ui->outTotal->setText("$ " + QString::number(total, 'f', 2));
+    ui->outIva->setText("$ " + QString::number(m_iva, 'f', 2));
+    ui->outTotal->setText("$ " + QString::number(m_total, 'f', 2));
+}
+
+void Principal::on_cmdCompra_released()
+{
+    //Recibimos la informacion del cliente
+    QString cedula = ui->inCedula->text();
+    QString nombre = ui->inNombre->text();
+    QString telf = ui->inTelefono->text();
+    QString correo = ui->inEmail->text();
+    QString dir = ui->inDireccion->toPlainText();
+    //Si no se ha comprado nada se muestra un mensaje de avertencia
+    if(informacion.isEmpty())
+        ui->outAdvertencia->setText("<p style=color:#FF0000;><b>Error:</b> La cesta esta vacia!!</p>");
+
+    //Si la cedula esta vacia se muestra un mensaje de advertencia
+    else if(cedula.isEmpty())
+        ui->outAdvertencia->setText("<p style=color:#FF0000;><b>Error:</b> La cedula debe ser ingresada</p>");
+
+    //Si la cedula es ingresada con 9, se creara un cliente como consumidor final
+    else if(cedula == "9999999999")
+    {
+        Cliente *p = new Cliente();
+        Resumen *resumen = new Resumen();
+        resumen->setCliente(p->informacion());
+        resumen->setResumen(informacion);
+        resumen->setSubtotal("$ " + QString::number(m_subtotal, 'f', 2));
+        resumen->setIva("$ " + QString::number(m_iva, 'f', 2));
+        resumen->setTotal("$ " + QString::number(m_total, 'f', 2));
+        resumen->show();
+        limpiar();
+    }
+    //Si el nombre esta vacio se muestra un mensaje de advertencia
+    else if(nombre.isEmpty())
+        ui->outAdvertencia->setText("<p style=color:#FF0000;><b>Error:</b> El nombre debe ser ingresado</p>");
+
+    //Si la cedula es valida, se crea el cliente y se muestra la compra
+    else if(verificador(cedula))
+    {
+        Cliente *p = new Cliente(cedula, nombre, telf, correo, dir);
+        Resumen *resumen = new Resumen();
+        resumen->setCliente(p->informacion());
+        resumen->setResumen(informacion);
+        resumen->setSubtotal("$ " + QString::number(m_subtotal, 'f', 2));
+        resumen->setIva("$ " + QString::number(m_iva, 'f', 2));
+        resumen->setTotal("$ " + QString::number(m_total, 'f', 2));
+        resumen->show();
+        limpiar();
+    }
+    //Si la cedula no es valida, se muestra un mensaje de advertencia
+    else if(!verificador(cedula))
+        ui->outAdvertencia->setText("<p style=color:#FF0000;><b>Error:</b> La cedula que ha ingresado es Incorrecta</p>");
 }

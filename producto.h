@@ -8,7 +8,6 @@ class Producto : public QObject
     Q_OBJECT
     Q_PROPERTY(int codigo READ codigo WRITE setCodigo)
     Q_PROPERTY(QString nombre READ nombre WRITE setNombre)
-    Q_PROPERTY(int cantidad READ cantidad WRITE setCantidad)
     Q_PROPERTY(float precio READ precio WRITE setPrecio)
 private:
     int m_codigo;
