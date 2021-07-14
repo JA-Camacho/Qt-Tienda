@@ -28,6 +28,7 @@ private slots:
 
 private:
     Ui::Resumen *ui;
+    QString m_total;
 };
 
 #endif // RESUMEN_H

@@ -14,6 +14,7 @@ void Resumen::setIva(QString iva)
 void Resumen::setTotal(QString total)
 {
     ui->outTotal->setText(total);
+    m_total = total;
 }
 
 Resumen::Resumen(QWidget *parent) :
@@ -62,8 +63,9 @@ void Resumen::on_cmdGuardar_released()
         QMessageBox::warning(this, "Resumen", "No se puede abrir el archivo");
         return;
     }
+
     //Guardar el contenido
-    out << "Cliente\n " << ui->outCliente->toPlainText() << "\nResumen de la compra\n" << ui->outResumen->toPlainText();
+    out << "Cliente\n " << ui->outCliente->toPlainText() << "\nResumen de la compra\n" << ui->outResumen->toPlainText() << "\nTotal: " << m_total << "\n------------";
     f.close();
     this->hide();
 }

@@ -75,7 +75,7 @@ void Principal::limpiar()
     ui->inEmail->clear();
     ui->inDireccion->clear();
     informacion.clear();
-    ui->outDetalle->clear();
+    ui->outDetalle->clearContents();
     m_subtotal = 0;
     ui->outSubtotal->setText("$ " + QString::number(m_subtotal, 'f', 2));
     ui->outIva->setText("$ " + QString::number(0.0, 'f', 2));
